@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ModaGPT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
+    <!-- <script src="{{ url_for('static', filename='scripts/index.js') }}"></script> -->
+</head>
+<body>
+    <header class="page-header">
+        <h1 class="brand-title">ModaGPT</h1>
+        <!-- <p class="header-description">Digite um prompt para pesquisar entre milhares de looks</p> -->
+        <section class="prompt-section">
+            <form action="gerar" class="" method="post">
+                <label class="header-description" for="input-look">Digite um prompt para pesquisar entre milhares de looks</label>
+                <div class="input">
+                    <button>
+                        <img src="{{ url_for('static', filename='seta.svg')}}" alt="">
+                        <!-- <input type="button"> -->
+                    </button>
+                    <input type="textarea" name="query" id="input-look" placeholder="Como posso te vestir hoje?">
+                </div>
+            </form>
+        </section>
+    </header>
+    <main class="content-wrapper">
+        <section class="suggestions-section">
+            <h2 class="suggestions-title">Tente estes exemplos</h2>
+            <article class="suggestion-item" onclick="location.href='gerar'">
+                <p class="suggestion-text">"Preciso de um vestido azul para formatura"</p>
+                <img src="{{ url_for('static', filename='seta.svg')}}" alt="">
+            </article> 
+            <article class="suggestion-item" onclick="location.href='gerar'">
+                <p class="suggestion-text">"Preciso de um look elegante para um aniversário"</p>
+                <img src="{{ url_for('static', filename='seta.svg')}}" alt="">
+            </article>
+            <article class="suggestion-item" onclick="location.href='gerar'">
+                <p class="suggestion-text">"Tenho uma reunião importante a ir"</p>
+                <img src="{{ url_for('static', filename='seta.svg')}}" alt="">
+            </article>
+        </section>
+    </main>
+    <footer class="page-footer">
+    <p>Cr├®dito La Moda @ 2024</p>    
+    </footer>
+</body>
+</html>
