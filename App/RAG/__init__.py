@@ -1,33 +1,29 @@
 import os
-os.environ["OPENAI_API_KEY"] = "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"
+os.environ["OPENAI_API_KEY"] = ""
 
 import re
 
 import logging
 from langchain_openai import OpenAI
 from langchain_openai import OpenAIEmbeddings
-from langchain_community.vectorstores.chroma import Chroma
+# from langchain_community.vectorstores.chroma import Chroma
 from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain.storage import InMemoryStore
-from langchain.memory import ConversationBufferMemory
+# from langchain.memory import ConversationBufferMemory
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.retrievers import ParentDocumentRetriever
 from langchain.vectorstores.faiss import FAISS
 from langchain.docstore.document import Document
-from langchain.chains import RetrievalQA
+# from langchain.chains import RetrievalQA
 from langchain_core.embeddings import Embeddings
 
 from App.RAG.scraper import Roupa
 
 import logging
 
-loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
-for logger in loggers:
-    logger.setLevel(logging.INFO)
-
-logger = logging.Logger("RAG")
+logger = logging.getLogger("main")
 
 # def pretty_print_docs(docs):
 #     print(f"\n{'-' * 100}\n".join([f"Document {i+1}:\n" + d.page_content for i, d in enumerate(docs)]))
@@ -91,9 +87,9 @@ Situação: {question}"""
 
     logger.info("Carregando docs")
     loader = DirectoryLoader('./App/RAG/docs', glob="**/*.txt", loader_cls=TextLoader, show_progress=True)
-    
+
     docs = loader.load()
-    
+
     embeddings = OpenAIEmbeddings(chunk_size=600)
     # vectorstore = Chroma(collection_name="full_documents", embedding_function=embeddings)
     # vectorstore = FAISS.from_documents(documents=docs, embedding=embeddings)

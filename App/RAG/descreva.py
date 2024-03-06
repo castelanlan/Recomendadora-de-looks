@@ -1,8 +1,6 @@
 import os
 from openai import OpenAI
 
-os.environ['OPENAI_API_KEY'] = "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"
-
 client = OpenAI()
 
 response = client.chat.completions.create(
