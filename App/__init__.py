@@ -3,6 +3,7 @@ from flask import logging as flog
 
 import logging
 import requests
+from datetime import datetime
 
 class CustomFormatter(logging.Formatter):
 
@@ -14,8 +15,9 @@ class CustomFormatter(logging.Formatter):
     pink = "\x1b[0;35m"
     reset = "\x1b[0m"
     # format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s (%(filename)s:%(lineno)d)"
-    title = pink + '%(name)-5s :: ' + reset
-    format =  '%(levelname)-8s :: %(message)s'
+    # date = "%H:%M:%S"
+    title = '%(asctime)s ' + pink + '| %(name)-5s' + reset
+    format = ' :: %(levelname)-8s :: %(message)s'
     FORMATS = {
         logging.DEBUG: title + grey + format + reset,
         logging.INFO: title + blue + format + reset,
@@ -25,8 +27,9 @@ class CustomFormatter(logging.Formatter):
     }
 
     def format(self, record):
+        date = "%H:%M:%S"
         log_fmt = self.FORMATS.get(record.levelno)
-        formatter = logging.Formatter(log_fmt)
+        formatter = logging.Formatter(log_fmt, datefmt=date)
         return formatter.format(record)
 
 class Roupa:
@@ -95,13 +98,13 @@ def index() -> str:
     return render_template('index.html')
 
 @app.route("/gerar", methods=['GET', 'POST'])
-def gerar() -> str:
+async def gerar() -> str:
     from App.RAG import pre_selecao, avaliar
 
     if request.method == 'POST':
         query = request.form['query']
         roupas = pre_selecao(query)
-        roupas = avaliar(roupas, query)
+        roupas = await avaliar(roupas, query)
         # print(roupas)
         return render_template('gerar.html', estado="carregando", roupas=roupas)
 

@@ -7,6 +7,7 @@ os.environ["OPENAI_API_KEY"] = ""
 import re
 import time
 import logging
+import asyncio
 from typing import List, Tuple
 
 from App import Roupa, CustomFormatter
@@ -19,7 +20,7 @@ rag_logger.addHandler(ch)
 
 faiss_path = './App/RAG/Faiss'
 
-from openai import OpenAI as OpenAIClient
+from openai import AsyncOpenAI
 from langchain_openai import OpenAI
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.document_loaders import DirectoryLoader, TextLoader
@@ -90,13 +91,13 @@ Situação: {question}"""
     inicial = time.perf_counter()
     loader = DirectoryLoader('./App/RAG/docs', glob="**/*.txt", loader_cls=TextLoader)
 
-    rag_logger.info("Retriever > Carregar docs")
+    rag_logger.info(f"{CustomFormatter.red}Retriever{CustomFormatter.blue} > Carregar docs")
     docs = loader.load()
     # docs_file = loader.load()
     # docs_splitter = CharacterTextSplitter("\n")
     # docs = docs_splitter.split_documents(docs_file)
 
-    rag_logger.info("Retriever > Init retriever")
+    rag_logger.info(f"{CustomFormatter.red}Retriever{CustomFormatter.blue} > Init retriever")
     embeddings = OpenAIEmbeddings(chunk_size=600)
     # vectorstore = Chroma(collection_name="full_documents", embedding_function=embeddings)
     # vectorstore = FAISS.from_documents(documents=docs, embedding=embeddings)
@@ -113,11 +114,11 @@ Situação: {question}"""
         parent_splitter=parent_splitter,
     )
 
-    rag_logger.info("Retriever > Carregar docs no retriever")
+    rag_logger.info(f"{CustomFormatter.red}Retriever{CustomFormatter.blue} > Carregar docs no retriever")
     retriever.add_documents(docs)
     final = time.perf_counter()
-    delta = final - inicial
-    rag_logger.info(f"Retriever carregado em {final}s")
+    delta = round(final - inicial, 3)
+    rag_logger.info(f"Retriever carregado em {CustomFormatter.red}{delta}{CustomFormatter.blue} segundos")
     
 
     # memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True, output_key='answer')
@@ -128,17 +129,19 @@ Situação: {question}"""
     rag_logger.warning(roupas_ia)
 
     roupas: List[Roupa] = []
+    inicial = time.perf_counter()
     for roupa_ia in roupas_ia:
         docs = retriever.get_relevant_documents(roupa_ia)
-        rag_logger.info(f"Encontrados: {len(docs)} documentos para \"{roupa_ia}\"")
+        rag_logger.info(f"Encontrados {CustomFormatter.red}{len(docs)}{CustomFormatter.blue} documentos para \"{CustomFormatter.red}{roupa_ia}{CustomFormatter.blue}\"")
 
         for doc in docs:
             try:
                 roupa = Roupa.from_dict(Roupa.from_doc(doc.page_content))
                 roupas.append(roupa)
             except KeyError as e:
-                rag_logger.error(f"Erro neste item {doc.page_content} > {e}")
-
+                rag_logger.error(f"Erro convertendo doc para Roupa. {doc.page_content} > {e}")
+    final = time.perf_counter()
+    rag_logger.info(f"Pré-selecionadas {len(roupas)} roupas em {CustomFormatter.red}{round(final - inicial, 3)}{CustomFormatter.blue} segundos")
     return roupas
 
 class RoupaAvaliada(Roupa):
@@ -148,16 +151,20 @@ class RoupaAvaliada(Roupa):
         self.justificativa: str = justificativa
         super().__init__(href, titulo, valor, desc, parcela, imgs, colecao)
 
-    def chat_avalia(self, situ):
-        nota, justificativa = self.vision(self.imgs[0], situ, self.titulo)
+    def __repr__(self) -> str:
+        return f"RoupaAvaliada('{self.titulo}', {self.nota}, {self.justificativa})"
+
+    async def chat_avalia(self, situ):
+        nota, justificativa = await self.vision(self.imgs[0], situ, self.titulo)
         self.nota = nota
         self.justificativa = justificativa
+        return self
 
     @staticmethod
-    def vision(img_link: str, situacao: str, roupa: str) -> Tuple[str, str]:
+    async def vision(img_link: str, situacao: str, roupa: str) -> Tuple[str, str]:
         rag_logger.info(f"Chamada para Vision | {img_link}")
-        client = OpenAIClient()
-        response = client.chat.completions.create(
+        client = AsyncOpenAI()
+        response = await client.chat.completions.create(
         model="gpt-4-vision-preview",
         messages=[
             {
@@ -168,9 +175,6 @@ class RoupaAvaliada(Roupa):
 
 Roupa: {roupa}
 Situação: {situacao}"""},
-                # {"type": "text", "text": f"""Give a 0-10 value for these clothes based on a situation, if it's perfect for the situation, it's a 10, if it doesn't fit the situation at all, it's a 0.
-# 
-# Situation: {situacao}"""},
                 {
                 "type": "image_url",
                 "image_url": {
@@ -183,26 +187,36 @@ Situação: {situacao}"""},
         max_tokens=300,
         )
         try:
-            nota = re.findall("NOTA: (\d+\/\d+)", response.choices[0].message.content)[0]
+            nota = re.findall("(\d+\/\d+)", response.choices[0].message.content)[0]
             nota = int(nota.strip("NOTA: ").split("/")[0])
+            rag_logger.info(f"Nota de roupa encontrada: {nota}/10.")
         except IndexError:
             nota = 5
+            rag_logger.warning(f"Nota de roupa não encontrada.")
+        
         just = response.choices[0].message.content
+        just = just.replace("Justificativa: ", "").replace(f"NOTA: {nota}/10", "")
         return nota, just
         # return 10, "Bela roupa"
 
-def avaliar(roupas: List[Roupa], situacao) -> List[Roupa]:
-    rag_logger.info(f"Avaliando {len(roupas)} roupas...")
-    roupas_avaliadas = []
-
+async def avaliar(roupas: List[Roupa], situacao) -> List[Roupa]:
+    roupas_avaliadas: List[RoupaAvaliada] = []
+    roupas = roupas[:6]
+    
     for roupa in roupas:
-        roupa = RoupaAvaliada(roupa.href, roupa.titulo, roupa.valor, roupa.desc, roupa.parcela, roupa.imgs, colecao=None, nota=0, justificativa="")
-        rag_logger.info(f"Avaliando {roupa.titulo}")
-        roupa.chat_avalia(situacao)
-        roupas_avaliadas.append(roupa)
+        roupas_avaliadas.append(RoupaAvaliada(roupa.href, roupa.titulo, roupa.valor, roupa.desc, roupa.parcela, roupa.imgs, colecao=None, nota=0, justificativa=""))
 
-        if len(roupas_avaliadas) > 6:
-            break
+    tasks = [roupa.chat_avalia(situacao) for roupa in roupas_avaliadas]
+    rag_logger.info("Gather avaliações do Vision")
+    roupas_avaliadas = await asyncio.gather(*tasks)
+    # for roupa in roupas:
+    #     roupa = RoupaAvaliada(roupa.href, roupa.titulo, roupa.valor, roupa.desc, roupa.parcela, roupa.imgs, colecao=None, nota=0, justificativa="")
+    #     rag_logger.info(f"Avaliando {roupa.titulo}")
+    #     roupa.chat_avalia(situacao)
+    #     roupas_avaliadas.append(roupa)
+
+    #     if len(roupas_avaliadas) > 6:
+    #         break
     
     roupas_ordenadas = sorted(roupas_avaliadas, key=lambda roupa: roupa.nota, reverse=True)
 
