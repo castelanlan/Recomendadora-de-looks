@@ -1,88 +1,14 @@
 from time import sleep
 # from log import CustomFormatter
 import logging
-class CustomFormatter(logging.Formatter):
 
-    grey = "\x1b[38;20m"
-    blue = "\x1b[34;20m"
-    yellow = "\x1b[33;20m"
-    red = "\x1b[31;20m"
-    bold_red = "\x1b[31;1m"
-    pink = "\x1b[0;35m"
-    reset = "\x1b[0m"
-    # format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s (%(filename)s:%(lineno)d)"
-    title = pink + '%(name)-5s :: ' + reset
-    format =  '%(levelname)-8s :: %(message)s'
-    FORMATS = {
-        logging.DEBUG: title + grey + format + reset,
-        logging.INFO: title + blue + format + reset,
-        logging.WARNING: title + yellow + format + reset,
-        logging.ERROR: title + red + format + reset,
-        logging.CRITICAL: title + bold_red + format + reset
-    }
-
-    def format(self, record):
-        log_fmt = self.FORMATS.get(record.levelno)
-        formatter = logging.Formatter(log_fmt)
-        return formatter.format(record)
-
+from App import Roupa, CustomFormatter
 
 import logging
-import requests
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.remote.webelement import WebElement
-from selenium.common.exceptions import StaleElementReferenceException, NoSuchElementException
-
-class Roupa:
-
-    @staticmethod
-    def download_image(url, o) -> None:
-        open(o, 'wb').write(requests.get(url))
-
-    def __init__(self, href: str, titulo: str, valor: str, desc: str, parcela: str, imgs: list[str], colecao: str = None) -> None:
-        self.href = href
-        self.titulo = titulo
-        self.valor = valor
-        self.desc = desc
-        self.colecao = colecao
-        self.parcela = parcela
-        self.imgs = imgs
-    
-    def save_str(self) -> str:
-        to_s = f"""Roupa: {self.titulo}
-Link: {self.href}
-Valor: {self.valor}
-Resumo: {self.desc}
-Parcela: {self.parcela}
-Imagens: {self.imgs}
-
-"""
-        return to_s
-    
-    def __repr__(self) -> str:
-        return f'Roupa({self.titulo}, {self.valor}, {self.colecao})'
-
-    @staticmethod
-    def from_doc(doc: str) -> dict:
-        res = {}
-        lines = doc.splitlines()
-        for line in lines:
-            key, value = line.split(': ', 1)
-            res[key] = value
-        
-        return res
-    
-    @staticmethod
-    def from_dict(dic):
-        return Roupa(dic['Link'],
-                     dic['Roupa'],
-                     dic['Valor'],
-                     dic['Resumo'],
-                     dic['Parcela'],
-                     dic['Imagens'])
+from selenium.common.exceptions import NoSuchElementException
 
 def front_page(limite: int, first_try=True) -> None:
     global tentativa
@@ -92,14 +18,8 @@ def front_page(limite: int, first_try=True) -> None:
     
     if first_try:
         logger.warning("Front page")
-        # driver.get("https://www.lancaperfume.com.br/roupas/vestidos")
         # driver.get("https://www.lancaperfume.com.br/roupas/cal%C3%A7as")
-        # driver.get("https://www.lancaperfume.com.br/roupas/blusas")
-        # driver.get("https://www.lancaperfume.com.br/roupas/jaquetas-e-casacos")
-        driver.get("https://www.lancaperfume.com.br/roupas/shorts-e-bermudas")
-        # driver.get("https://www.lancaperfume.com.br/roupas/macacões")
-        # driver.get("https://www.lancaperfume.com.br/roupas/camisas")
-        # driver.get("https://www.lancaperfume.com.br/roupas?initialMap=productClusterIds&initialQuery=2462&map=category-2,productclusternames&query=/biquinis/roupas&searchState")
+        driver.get("https://www.lancaperfume.com.br/roupas?initialMap=productClusterIds&initialQuery=2462&map=category-2,productclusternames&query=/biquinis/roupas&searchState")
         
 
         logger.info("Dormindo")
@@ -136,7 +56,10 @@ def front_page(limite: int, first_try=True) -> None:
                 continue
 
             # card_collection = card_summary.find_element(By.TAG_NAME, "span").text
-            card_condition = card.find_element(By.CLASS_NAME, "lojalancaperfume-store-theme-5-x-customGalleryItemInstallments").text.strip("Em até").strip("sem juros").replace("\n", "")
+            try:
+                card_condition = card.find_element(By.CLASS_NAME, "lojalancaperfume-store-theme-5-x-customGalleryItemInstallments").text.strip("Em até").strip("sem juros").replace("\n", "")
+            except NoSuchElementException:
+                card_condition = "Sem parcelamento :("
 
             logger.info(f"Objeto de Roupa: {card_title} | Roupas: {len(roupas) + 1}")
             roupa = Roupa(href = card_href, titulo = card_title, valor = card_price, desc = "Vazio", parcela = card_condition, imgs = imgs)
@@ -172,18 +95,7 @@ def descricao(link) -> str:
     
     # Só chega aqui caso nenhum h2 cumpra a condição
     logger.error(f"Descrição não encontrada para link: {link}")
-    return "DESCRIÇÃO NÃO ENCONTRADA"
-
-    # for h2 in h2s:
-        # if h2.text.startswith("DESC"):
-            # irmao = h2 # descricao = h2.find_element(By.XPATH, "./following-sibling::div").find_element(By.TAG_NAME, "div").find_element(By.TAG_NAME, "div").find_element(By.TAG_NAME, "div").get_attribute("innerText")
-        # else:
-            # logger.error(f"Descrição não encontrada para link: {link}")
-            # return "DESCRIÇÃO NÃO ENCONTRADA"
-
-    # elem = irmao.find_element(By.XPATH, "./following-sibling::div")
-    # descricao = elem.find_element(By.TAG_NAME, "div").find_element(By.TAG_NAME, "div").find_element(By.TAG_NAME, "div").get_attribute("innerText")
-    
+    return "DESCRIÇÃO NÃO ENCONTRADA"   
 
 def main() -> None:
     front_page(50)
@@ -195,7 +107,7 @@ if __name__ == "__main__":
     roupas: list[Roupa] = []
     tentativa: int = 1
     limite_tentativas = 10
-    logger = logging.getLogger("main")
+    logger = logging.Logger("Scraper")
     logger.setLevel(logging.INFO)
     ch = logging.StreamHandler()
     ch.setFormatter(CustomFormatter())
@@ -210,12 +122,7 @@ if __name__ == "__main__":
     data = str(datetime.now().strftime("%d.%m - %H.%M"))
     
     # arquivo = f"CALÇAS La Moda - {data}"
-    
-    # arquivo = f"JAQUETAS E CASACOS La Moda - {data}"
-    arquivo = f"SHORTS E BERMUDAS La Moda - {data}"
-    # arquivo = f"MACACÕES La Moda - {data}"
-    # arquivo = f"CAMISAS La Moda - {data}"
-    # arquivo = f"BIQUINIS La Moda - {data}"
+    arquivo = f"BIQUINIS La Moda - {data}"
 
     with open(f"./App/RAG/sem-desc/{arquivo}.txt", "w", encoding="utf-8") as f:
         write = ""

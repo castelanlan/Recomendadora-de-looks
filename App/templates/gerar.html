@@ -29,7 +29,7 @@
     </header>
     <main class="content-wrapper">
         {% for roupa in roupas %}
-        <p>Roupa: {{ roupa.titulo }} | <a href="{{ roupa.href }}">Link</a></p>
+        <p>{{ roupa.titulo }} | <a href="{{ roupa.href }}">Link</a> | {{ roupa.nota }}/10 -> {{ roupa.justificativa }}</p>
         <img src="{{ roupa.imgs[0] }}" alt="">
         {% endfor %}
     </main>
