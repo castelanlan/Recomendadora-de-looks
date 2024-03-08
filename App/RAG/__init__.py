@@ -41,7 +41,7 @@ def update_vector_db(docs: List[Document], embeddings: Embeddings):
     vectorstore.save_local(faiss_path)
     return vectorstore
 
-def extract_roupa_values(text: str):
+def extract_roupa_values(text: str) -> List[str]:
     """Extracts ROUPA values from the given text, handling both single-item and comma-separated formats.
 
     Args:
@@ -91,23 +91,41 @@ Situação: {question}"""
 
     rag_logger.info("Carregando retriever")
     inicial = time.perf_counter()
-    loader = DirectoryLoader('./App/RAG/docs', glob="**/*.txt", loader_cls=TextLoader)
+    text_loader_kwargs={'autodetect_encoding': True}
+    
+    rag_logger.info(f"{CustomFormatter.red}Retriever{CustomFormatter.blue} > Directory loader")
+    loader = DirectoryLoader('./App/RAG/docs', glob="**/*.txt", loader_cls=TextLoader,use_multithreading=True, max_concurrency=8, loader_kwargs=text_loader_kwargs)
 
+    rag_logger.info(f"{CustomFormatter.red}Retriever{CustomFormatter.blue} > Splitar docs")
+    docs = CharacterTextSplitter("\n").split_documents(docs)
     rag_logger.info(f"{CustomFormatter.red}Retriever{CustomFormatter.blue} > Carregar docs")
     docs = loader.load()
+    rag_logger.warning(f"Documentos: {len(docs)} - {', '.join([str(len(docs[i].page_content)) for i in range(0, 10)])}")
+    
     # docs_file = loader.load()
     # docs_splitter = CharacterTextSplitter("\n")
     # docs = docs_splitter.split_documents(docs_file)
 
-    rag_logger.info(f"{CustomFormatter.red}Retriever{CustomFormatter.blue} > Init retriever")
+    rag_logger.info(f"{CustomFormatter.red}Retriever{CustomFormatter.blue} > Init embeddings")
     embeddings = OpenAIEmbeddings(chunk_size=600)
+    
     # vectorstore = Chroma(collection_name="full_documents", embedding_function=embeddings)
     # vectorstore = FAISS.from_documents(documents=docs, embedding=embeddings)
-    vectorstore = update_vector_db(docs, embeddings)
-    # vectorstore = FAISS.load_local(faiss_path, embeddings)
+    # vectorstore = update_vector_db(docs, embeddings)
+    
+    rag_logger.info(f"{CustomFormatter.red}Retriever{CustomFormatter.blue} > Vectorstore")
+    vectorstore = FAISS.load_local(faiss_path, embeddings)
+    
+    rag_logger.info(f"{CustomFormatter.red}Retriever{CustomFormatter.blue} > Store")
     store = InMemoryStore()
+    
+    rag_logger.info(f"{CustomFormatter.red}Retriever{CustomFormatter.blue} > Parent splitter")
     parent_splitter = RecursiveCharacterTextSplitter(chunk_size=640, chunk_overlap=0)
+    
+    rag_logger.info(f"{CustomFormatter.red}Retriever{CustomFormatter.blue} > Child splitter")
     child_splitter = RecursiveCharacterTextSplitter(chunk_size=200, chunk_overlap=40)
+    
+    rag_logger.info(f"{CustomFormatter.red}Retriever{CustomFormatter.blue} > Retriever")
     global retriever # :X
     retriever = ParentDocumentRetriever(
         vectorstore=vectorstore,
@@ -118,6 +136,7 @@ Situação: {question}"""
 
     rag_logger.info(f"{CustomFormatter.red}Retriever{CustomFormatter.blue} > Carregar docs no retriever")
     retriever.add_documents(docs)
+    
     final = time.perf_counter()
     delta = round(final - inicial, 3)
     rag_logger.info(f"Retriever carregado em {CustomFormatter.red}{delta}{CustomFormatter.blue} segundos")
@@ -128,7 +147,7 @@ Situação: {question}"""
     # links = []
     roupas_ia = extract_roupa_values(ans)
     
-    rag_logger.warning(roupas_ia)
+    rag_logger.warning("Roupas IA >>" + ", ".join(roupas_ia))
 
     roupas: List[Roupa] = []
     inicial = time.perf_counter()

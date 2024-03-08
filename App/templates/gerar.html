@@ -33,10 +33,11 @@
             <img src="{{ roupa.imgs[0] }}" alt="{{ roupa.titulo }}" style="width: 100%;">
             <div class="card-container">
                 <span class="card-title">
-                    <h3>{{ roupa.titulo }}</h4>
-                    <img src="{{ url_for('static', filename='seta.svg')}}" alt="Ícone de adicionar no carrinho">
+                    <h4>{{ roupa.titulo }}</h4>
+                    <!-- <img src="{{ url_for('static', filename='seta.svg')}}" alt="Ícone de adicionar no carrinho"> -->
+                    <h4>{{ roupa.nota }}/10</h4>
                 </span>
-                <p class="card-desc">{{ roupa.desc }}</p>
+                <p class="card-desc">{{ roupa.justificativa.split(".")[1].strip() }}</p>
                 <!-- <p>{{ roupa.titulo }} | <a href="{{ roupa.href }}">Link</a> | {{ roupa.nota }}/10 -> {{ roupa.justificativa }}</p> -->
             </div>
         </div>

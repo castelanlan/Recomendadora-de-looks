@@ -16,7 +16,7 @@ class CustomFormatter(logging.Formatter):
     reset = "\x1b[0m"
     # format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s (%(filename)s:%(lineno)d)"
     # date = "%H:%M:%S"
-    title = '%(asctime)s ' + pink + '| %(name)-5s' + reset
+    title = '%(asctime)s.%(msecs)03d ' + pink + '| %(name)-5s' + reset
     format = ' :: %(levelname)-8s :: %(message)s'
     FORMATS = {
         logging.DEBUG: title + grey + format + reset,
@@ -95,20 +95,22 @@ app.logger.setLevel(logging.INFO)
 
 @app.route("/", methods=['GET'])
 def index() -> str:
-    return render_template('index.html')
+    from App.RAG import roupinha
+    roupas = [roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha]
+    return render_template('istvan.html', roupas=roupas)
 
 @app.route("/gerar", methods=['GET', 'POST'])
 async def gerar() -> str:
-    from App.RAG import pre_selecao, avaliar
-    # from App.RAG import roupinha
+    # from App.RAG import pre_selecao, avaliar
+    from App.RAG import roupinha
 
-    # if 1:
-    if request.method == 'POST':
-        query = request.form['query']
-        roupas = pre_selecao(query)
-        roupas = await avaliar(roupas, query)
-        # roupas = [roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha]
-        print(roupas)
+    if 1:
+    # if request.method == 'POST':
+        # query = request.form['query']
+        # roupas = pre_selecao(query)
+        # roupas = await avaliar(roupas, query)
+        roupas = [roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha]
+        # print(roupas)
         return render_template('gerar.html', estado="carregando", roupas=roupas)
 
     return redirect('/')

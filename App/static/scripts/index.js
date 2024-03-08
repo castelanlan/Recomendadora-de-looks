@@ -1,4 +1,4 @@
-const scrollContainer = document.querySelector("main");
+const scrollContainer = document.getElementById("carroussel");
 
 scrollContainer.addEventListener("wheel", (evt) => {
     evt.preventDefault();
