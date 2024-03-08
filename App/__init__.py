@@ -100,12 +100,15 @@ def index() -> str:
 @app.route("/gerar", methods=['GET', 'POST'])
 async def gerar() -> str:
     from App.RAG import pre_selecao, avaliar
+    # from App.RAG import roupinha
 
+    # if 1:
     if request.method == 'POST':
         query = request.form['query']
         roupas = pre_selecao(query)
         roupas = await avaliar(roupas, query)
-        # print(roupas)
+        # roupas = [roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha]
+        print(roupas)
         return render_template('gerar.html', estado="carregando", roupas=roupas)
 
     return redirect('/')

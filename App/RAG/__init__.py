@@ -20,6 +20,8 @@ rag_logger.addHandler(ch)
 
 faiss_path = './App/RAG/Faiss'
 
+
+
 from openai import AsyncOpenAI
 from langchain_openai import OpenAI
 from langchain_openai import OpenAIEmbeddings
@@ -144,6 +146,7 @@ Situação: {question}"""
     rag_logger.info(f"Pré-selecionadas {len(roupas)} roupas em {CustomFormatter.red}{round(final - inicial, 3)}{CustomFormatter.blue} segundos")
     return roupas
 
+
 class RoupaAvaliada(Roupa):
     def __init__(self, href: str, titulo: str, valor: str, desc: str, parcela: str, imgs: List[str], colecao: str = None,
                 nota: int=None, justificativa: str=None) -> None:
@@ -198,6 +201,10 @@ Situação: {situacao}"""},
         just = just.replace("Justificativa: ", "").replace(f"NOTA: {nota}/10", "")
         return nota, just
         # return 10, "Bela roupa"
+
+roupinha = RoupaAvaliada("https://www.lancaperfume.com.br/biquini-cortininha-bordado-526bk001190/p", "Biquíni", "R$100",
+                         "Descrição lorem ipsum dolor sit amet", "5x de 100", ['https://lojalancaperfume.vtexassets.com/arquivos/ids/422110-450-640/'],
+                         None, 10, "Justificativa da roupa")
 
 async def avaliar(roupas: List[Roupa], situacao) -> List[Roupa]:
     roupas_avaliadas: List[RoupaAvaliada] = []
