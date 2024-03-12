@@ -95,9 +95,9 @@ app.logger.setLevel(logging.INFO)
 
 @app.route("/", methods=['GET'])
 def index() -> str:
-    from App.RAG import roupinha
-    roupas = [roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha]
-    return render_template('istvan.html', roupas=roupas)
+    # from App.RAG import roupinha
+    # roupas = [roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha]
+    return render_template('istvan.html')
 
 @app.route("/gerar", methods=['GET', 'POST'])
 async def gerar() -> str:
@@ -105,12 +105,17 @@ async def gerar() -> str:
     from App.RAG import roupinha
 
     if 1:
+        import time
+        time.sleep(5.5)
     # if request.method == 'POST':
         # query = request.form['query']
+        # if query == "":
+            # return redirect("/")
         # roupas = pre_selecao(query)
         # roupas = await avaliar(roupas, query)
-        roupas = [roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha]
+        # roupas = [roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha]
+        # roupas_combinam = [roupinha, roupinha, roupinha, roupinha, roupinha, roupinha, roupinha]
         # print(roupas)
-        return render_template('gerar.html', estado="carregando", roupas=roupas)
+        return render_template('istvan.html', estado="carregando", roupas=roupinha[0:5], roupas_combinam=roupinha[6:-1])
 
     return redirect('/')

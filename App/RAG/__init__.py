@@ -20,8 +20,6 @@ rag_logger.addHandler(ch)
 
 faiss_path = './App/RAG/Faiss'
 
-
-
 from openai import AsyncOpenAI
 from langchain_openai import OpenAI
 from langchain_openai import OpenAIEmbeddings
@@ -62,7 +60,7 @@ def extract_roupa_values(text: str) -> List[str]:
     roupa_values = [item for sublist in roupa_values for item in sublist]
     return roupa_values
 
-def pre_selecao(situacao: str) -> List[Roupa]:
+def pre_selecao(situacao: str) -> List[dict]:
     """Que roupas combinam com a situação :situacao:?
     
     Args: 
@@ -76,7 +74,7 @@ def pre_selecao(situacao: str) -> List[Roupa]:
         input_variables=["question"],
         template="""Você é uma inteligência que gera palavras para serem procuradas num banco de dados. Seu trabalho é retornar quais roupas seriam adequadas para uma situação.
         Dê respostas SIMPLES de no máximo 2 palavras. Além de vestimentas, você pode retornar adjetivos em geral, por exemplo "casual", "colorido", "elegante".
-        Não retorne acessórios, retorne as palavras no formato 'Vestido longo, colorido, terno preto, salto, etc...'. Seja criativo, procure dar entre 5 a 10 respostas. Não numere as respostas.
+        Não retorne acessórios, retorne as palavras no formato '(roupa) (adjetivo), ou somente (adjetivo), por exemplo: terno preto, formal  , etc...'. Seja criativo, procure dar entre 5 a 10 respostas. Não numere as respostas.
 Situação: {question}"""
     )
 
@@ -96,8 +94,8 @@ Situação: {question}"""
     rag_logger.info(f"{CustomFormatter.red}Retriever{CustomFormatter.blue} > Directory loader")
     loader = DirectoryLoader('./App/RAG/docs', glob="**/*.txt", loader_cls=TextLoader,use_multithreading=True, max_concurrency=8, loader_kwargs=text_loader_kwargs)
 
-    rag_logger.info(f"{CustomFormatter.red}Retriever{CustomFormatter.blue} > Splitar docs")
-    docs = CharacterTextSplitter("\n").split_documents(docs)
+    # rag_logger.info(f"{CustomFormatter.red}Retriever{CustomFormatter.blue} > Splitar docs")
+    # docs = CharacterTextSplitter("\n").split_documents(docs)
     rag_logger.info(f"{CustomFormatter.red}Retriever{CustomFormatter.blue} > Carregar docs")
     docs = loader.load()
     rag_logger.warning(f"Documentos: {len(docs)} - {', '.join([str(len(docs[i].page_content)) for i in range(0, 10)])}")
@@ -149,18 +147,23 @@ Situação: {question}"""
     
     rag_logger.warning("Roupas IA >>" + ", ".join(roupas_ia))
 
-    roupas: List[Roupa] = []
+    roupas: List[dict] = []
     inicial = time.perf_counter()
     for roupa_ia in roupas_ia:
+        roupa_dict = {"roupa_type": roupa_ia, "roupas": []}
+
         docs = retriever.get_relevant_documents(roupa_ia)
         rag_logger.info(f"Encontrados {CustomFormatter.red}{len(docs)}{CustomFormatter.blue} documentos para \"{CustomFormatter.red}{roupa_ia}{CustomFormatter.blue}\"")
 
         for doc in docs:
             try:
                 roupa = Roupa.from_dict(Roupa.from_doc(doc.page_content))
-                roupas.append(roupa)
+                roupa_dict["roupas"].append(roupa)
             except KeyError as e:
                 rag_logger.error(f"Erro convertendo doc para Roupa. {doc.page_content} > {e}")
+            
+        roupas.append(roupa_dict)
+        
     final = time.perf_counter()
     rag_logger.info(f"Pré-selecionadas {len(roupas)} roupas em {CustomFormatter.red}{round(final - inicial, 3)}{CustomFormatter.blue} segundos")
     return roupas
@@ -174,7 +177,7 @@ class RoupaAvaliada(Roupa):
         super().__init__(href, titulo, valor, desc, parcela, imgs, colecao)
 
     def __repr__(self) -> str:
-        return f"RoupaAvaliada('{self.titulo}', {self.nota}, {self.justificativa})"
+        return f"RoupaAvaliada('{self.href}', '{self.titulo}', '{self.valor}', '{self.desc}', {self.parcela}, '{self.imgs[0]}', '{self.colecao}', '{self.nota}', '{self.justificativa}')"
 
     async def chat_avalia(self, situ):
         nota, justificativa = await self.vision(self.imgs[0], situ, self.titulo)
@@ -221,15 +224,24 @@ Situação: {situacao}"""},
         return nota, just
         # return 10, "Bela roupa"
 
-roupinha = RoupaAvaliada("https://www.lancaperfume.com.br/biquini-cortininha-bordado-526bk001190/p", "Biquíni", "R$100",
-                         "Descrição lorem ipsum dolor sit amet", "5x de 100", ['https://lojalancaperfume.vtexassets.com/arquivos/ids/422110-450-640/'],
-                         None, 10, "Justificativa da roupa")
-
-async def avaliar(roupas: List[Roupa], situacao) -> List[Roupa]:
+async def avaliar(roupas: List[dict], situacao) -> List[Roupa]:
     roupas_avaliadas: List[RoupaAvaliada] = []
-    roupas = roupas[:6]
+    roupas_final = []
+    print(1)
+    # print(roupas[0])
+
+    for roupa_dict in roupas:
+        print(roupa_dict)
+        prim_roupa = roupa_dict["roupas"][0]
+        seco_roupa = roupa_dict["roupas"][1]
+        roupas_final.append(prim_roupa)
+        roupas_final.append(seco_roupa)
+        print(2)
     
-    for roupa in roupas:
+    roupas_final = roupas_final[:15]
+    print(3)
+    
+    for roupa in roupas_final:
         roupas_avaliadas.append(RoupaAvaliada(roupa.href, roupa.titulo, roupa.valor, roupa.desc, roupa.parcela, roupa.imgs, colecao=None, nota=0, justificativa=""))
 
     tasks = [roupa.chat_avalia(situacao) for roupa in roupas_avaliadas]
@@ -245,5 +257,7 @@ async def avaliar(roupas: List[Roupa], situacao) -> List[Roupa]:
     #         break
     
     roupas_ordenadas = sorted(roupas_avaliadas, key=lambda roupa: roupa.nota, reverse=True)
+    for roupa in roupas_ordenadas:
+        print(roupa)
 
     return roupas_ordenadas

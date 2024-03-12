@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ModaGPT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/istvan.css') }}">
+    <!-- <link rel="stylesheet" href="{{ url_for('static', filename='css/styles-gerar.css') }}"> -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <nav class="box">
+        <div class="nav-wrapper">
+            <div class="nav-title">
+                <img src="{{ url_for('static', filename='logo-lancaperfume-branco.svg')}}" alt="">
+                <p>Sua personal stylist digital</p>
+            </div>
+            <ul class="nav-links">
+                <li>
+                    <div class="nav-link-item">
+                        <img src="{{ url_for('static', filename='chat.svg')}}" alt="" class="icon">
+                        <h3>Sua conversa</h3>
+                    </div>
+                </li>
+                <li>
+                    <div class="nav-link-item selected">
+                        <img src="{{ url_for('static', filename='cabide.svg')}}" alt="" class="icon">
+                        <h3>Provador</h3>
+                    </div>
+                </li>
+            </ul>
+            <div class="nav-footer">
+                <img src="{{ url_for('static', filename='rosto.png')}}" alt="">
+                <div>
+                    <svg viewBox="0 0 120 120" version="1.1" xmlns="https://www.w3.org/2000/svg" color="green">
+                        <circle fill="green" cx="60" cy="60" r="50" />
+                    </svg>
+                    <p>Online</p>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <main class="box">
+        <div class="main-wrapper">
+            {% if roupas %}
+            <div class="deck">
+                <div class="deck-header">
+                    <h3>Sugestões só para você</h3>
+                    <div class="deck-seta">
+                        <img src="{{ url_for('static', filename='seta 2.svg')}}" alt="" class="icon">
+                        <img src="{{ url_for('static', filename='seta 2.svg')}}" alt="" class="icon">
+                    </div>
+                </div>
+                <div class="card-holder" id="carroussel">
+                    {% for roupa in roupas %}
+                    <div class="card">
+                        <div class="card-like">
+                            <img src="{{ url_for('static', filename='heart.svg')}}" class="small-icon">
+                        </div>
+                        <img src="{{ roupa.imgs[0] }}" alt="{{ roupa.titulo }}">
+                        <div class="card-text">
+                            <div class="card-header">
+                                <h6>LANÇAMENTO</h6>
+                                <h5>{{ roupa.nota }}/10</h5>
+                            </div>
+                            <div class="card-title">
+                                <h2>{{ roupa.titulo }}</h2>
+                            </div>
+                            <div class="card-valor">
+                                <h3>{{ roupa.valor }}</h3>
+                                <h4>{{ roupa.parcela }}</h4>
+                            </div>
+                            <p>{{ roupa.desc }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <h1>Parece que não começamos ainda, digite um prompt para pesquisar entre milhares de looks</h1>
+            {% endif %}
+            {% if roupas_combinam %}
+            <div class="deck">
+                <div class="deck-header">
+                    <h3>Peças que combinam</h3>
+                    <div class="deck-seta">
+                        <img src="{{ url_for('static', filename='seta 2.svg')}}" alt="" class="icon">
+                        <img src="{{ url_for('static', filename='seta 2.svg')}}" alt="" class="icon">
+                    </div>
+                </div>
+                <div class="card-holder bottom-card" id="carroussel">
+                    {% for roupa in roupas_combinam %}
+                    <div class="card">
+                        <div class="card-like">
+                            <img src="{{ url_for('static', filename='heart.svg')}}" class="small-icon">
+                        </div>
+                        <img src="{{ roupa.imgs[0] }}" alt="{{ roupa.titulo }}" class="bottom-card-imgs">
+                        <div class="card-text">
+                            <div class="card-header">
+                                <h6>LANÇAMENTO</h6>
+                                <h5>{{ roupa.nota }}/10</h5>
+                            </div>
+                            <div class="card-title">
+                                <h2>{{ roupa.titulo }}</h2>
+                            </div>
+                            <div class="card-valor">
+                                <h3>{{ roupa.valor }}</h3>
+                                <h4>{{ roupa.parcela }}</h4>
+                            </div>
+                            <p>{{ roupa.desc }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            <div class="chat">
+                <form action="gerar" method="post">
+                    <div class="chat-text">
+                        <input type="textarea" name="query" id="input-look" placeholder="Como posso te vestir hoje?">
+                        <!-- <p>Escreva sua mensagem</p> -->
+                    </div>
+                    <div class="chat-icons">
+                        <img src="{{ url_for('static', filename='camera.svg') }}" alt="" class="medium-icon">
+                        <img src="{{ url_for('static', filename='mic.svg') }}" alt="" class="medium-icon">
+                        <button>
+                        <img src="{{ url_for('static', filename='seta 3.svg') }}" alt="" class="medium-icon">
+                    </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+    <script src="{{ url_for('static', filename='scripts/index.js') }}"></script>
+</body>
+
+</html>
